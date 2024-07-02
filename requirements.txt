@@ -1,1 +1,4 @@
-streamlit 
+streamlit
+pandas
+requests
+bz2file

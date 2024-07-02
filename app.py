@@ -2,6 +2,12 @@ import streamlit as st
 import pickle
 import pandas as pd
 import requests
+import bz2file as bz2
+
+def decompress_pickle(file):
+    data = bz2.BZ2File(file, 'rb')
+    data = pickle.load(data)
+    return data
 
 def fetch_poster(movie_id):
     response = requests.get('https://api.themoviedb.org/3/movie/{}?api_key=420b8821330cec3f214163c75423281c&language=en-US'.format(movie_id))
@@ -10,7 +16,7 @@ def fetch_poster(movie_id):
     return "https://image.tmdb.org/t/p/w500/" + data['poster_path']
 
 # Load movies data
-movies_list = pickle.load(open('movies.pkl', 'rb'))
+movies_list = decompress_pickle('movies.pbz2')
 if isinstance(movies_list, pd.DataFrame):
     movies = movies_list
 else:
@@ -22,7 +28,7 @@ if 'title' not in movies.columns:
     st.stop()
 
 # Load similarity matrix
-similarity = pickle.load(open('similarity.pkl', 'rb'))
+similarity = decompress_pickle('similarity.pbz2')
 
 def recommend(movie):
     movie_index = movies[movies['title'] == movie].index[0]
@@ -36,16 +42,15 @@ def recommend(movie):
         recommended_movies.append(movies.iloc[i[0]].title)
         # Fetch poster from API
         recommended_movies_posters.append(fetch_poster(movie_id))
-    return recommended_movies,recommended_movies_posters
+    return recommended_movies, recommended_movies_posters
 
 st.title('Movie Recommender System')
 
 selected_movie_name = st.selectbox(
     "Select a movie", movies['title'].tolist())
 
-
 if st.button("Get Recommendations"):
-    names,posters = recommend(selected_movie_name)
+    names, posters = recommend(selected_movie_name)
 
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
